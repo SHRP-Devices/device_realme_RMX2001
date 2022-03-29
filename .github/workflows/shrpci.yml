@@ -39,16 +39,20 @@ jobs:
 
        - name: Recovery Compilation
          uses: SHRP-Devices/Recovery-Compiler@release
-         
-       - uses: actions/upload-artifact@v2
-         with:
-          name: recoveryzip
-          path: home/runner/builder/out/target/product/*/SHRP*.zip
 
-       - uses: actions/upload-artifact@v2
+       - uses: actions/upload-artifact@v3
+         with:
+          name: my-artifact
+          run: cd ${BuildPath}/out/target/product/${CODENAME}/
+          path: |
+            recovery.img
+            SHRP*.zip
+            *.zip
+
+       - uses: actions/upload-artifact@v3
          with:
           name: recoveryimage
-          path: home/runner/builder/out/target/product/*/*.img
+          path: /out/target/product/*/*.img
 
        - name: PUSH To TG
          run: |
@@ -65,6 +69,23 @@ jobs:
                   -F "disable_web_page_preview=true" \
                   -F "parse_mode=html" \
                   -F caption=" <i> SHRP AddOnRescue </i> for <b> '$VENDOR' '$CODENAME' </b> | <i> #SHRP Recovery </i> "
+
+       - name: PUSH To WeTransfer
+         run: |
+              cd ${BuildPath}/out/target/product/${CODENAME}/
+              ZIP=$(echo *stable*.zip)
+              transfer wet $ZIP > link.txt  { echo "ERROR: Failed to Upload the Build!" && exit 1; }
+              # Mirror to oshi.at
+              curl -T $ZIP https://oshi.at/${FILENAME}/${OUTPUT} > mirror.txt  { echo "WARNING: Failed to Mirror the Build!"; }
+              DL_LINK=$(cat link.txt | grep Download | cut -d\  -f3)
+              MIRROR_LINK=$(cat mirror.txt | grep Download | cut -d\  -f1)
+              
+              ZIP=$(echo *AddonRescue*.zip)
+              transfer wet $ZIP > link.txt  { echo "ERROR: Failed to Upload the Build!" && exit 1; }
+              # Mirror to oshi.at
+              curl -T $ZIP https://oshi.at/${FILENAME}/${OUTPUT} > mirror.txt  { echo "WARNING: Failed to Mirror the Build!"; }
+              DL_LINK=$(cat link.txt | grep Download | cut -d\  -f3)
+              MIRROR_LINK=$(cat mirror.txt | grep Download | cut -d\  -f1)
 
        - name: PUSH to SF
          run: |
