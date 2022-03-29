@@ -43,12 +43,13 @@ jobs:
        - uses: actions/upload-artifact@v2
          with:
           name: recoveryzip
-          path: ${BuildPath}/out/target/product/${CODENAME}/*.zip
+          path: home/runner/builder/out/target/product/*/SHRP*.zip
 
        - uses: actions/upload-artifact@v2
          with:
           name: recoveryimage
-          path: ${BuildPath}/out/target/product/${CODENAME}/*.img
+          path: home/runner/builder/out/target/product/*/*.img
+
        - name: PUSH To TG
          run: |
               cd ${BuildPath}/out/target/product/${CODENAME}/
