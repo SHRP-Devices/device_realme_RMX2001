@@ -2,8 +2,8 @@ name: SHRP CI
 on:
   workflow_dispatch:
     inputs:
-      pushtosf:
-        description: 'set this to true if you wanna push to sf (all small)'
+      OFFICIAL_BUILD:
+        description: 'set true if you wanna push Official Build'
         required: false
 env:
   MANIFEST: "https://github.com/SHRP/manifest.git -b v3_11.0"
@@ -53,7 +53,6 @@ jobs:
               ZIP=$(echo *stable*.zip)
               sudo zip -r9 TestBuild_"${CODENAME}" $ZIP
               ZIPs=$(echo TestBuild_"${CODENAME}".zip)
-              
               curl -F document=@$ZIPs "https://api.telegram.org/bot$TOKEN/sendDocument" \
                   -F chat_id="-1001296548298" \
                   -F "disable_web_page_preview=true" \
@@ -66,10 +65,10 @@ jobs:
                   -F "parse_mode=html" \
                   -F caption=" <i> SHRP AddOnRescue </i> for <b> '$VENDOR' '$CODENAME' </b> | <i> #SHRP Recovery </i> "
 
-       - name: PUSH to SF
+       - name: Pushing Build To SourceForge
          run: |
-              if [[ "$PUSHTOSF" == "true" ]]; then
-                 printf "pushing to SF\n"
+              if [[ "$OFFICIAL_BUILD" == "true" ]]; then
+                 printf "Uploading to SourceForge\n"
                  cd ${BuildPath}/out/target/product/${CODENAME}/
                  sudo apt-get update -y && sudo apt-get install expect -y
                  expect -c '
@@ -93,5 +92,23 @@ jobs:
                  interact
                  '
               else
-                 printf "skipping sf pushing"
+                 printf "Uploading to SourceForge\n"
+                 cd ${BuildPath}/out/target/product/${CODENAME}/
+                 sudo apt-get update -y && sudo apt-get install expect -y
+                 expect -c '
+                 spawn sftp ${{ secrets.SFUSER }}@frs.sourceforge.net
+                 expect \"yes/no\"
+                 send "yes\r"
+                 expect \"Password\"       
+                 send "${{ secrets.SFPASS }}\r"
+                 expect \"sftp> \"
+                 send "cd /home/frs/project/shrp/test/\r"
+                 set timeout -1
+                 send "put *stable*.zip\r"
+                 expect "Uploading"
+                 expect "*100%*"
+                 expect "sftp*"
+                 send "bye\r"
+                 interact
+                 '
               fi
